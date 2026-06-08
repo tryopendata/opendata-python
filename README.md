@@ -1,19 +1,21 @@
-# opendata-sdk
+# tryopendata
 
 Python client for the [OpenData API](https://tryopendata.ai). Query, search, and analyze open datasets with a few lines of code.
+
+[![PyPI version](https://img.shields.io/pypi/v/tryopendata.svg)](https://pypi.org/project/tryopendata/)
 
 ## Installation
 
 ```bash
-pip install opendata-sdk
+pip install tryopendata
 ```
 
 With DataFrame support:
 
 ```bash
-pip install opendata-sdk[pandas]   # pandas
-pip install opendata-sdk[polars]   # polars
-pip install opendata-sdk[all]      # both
+pip install tryopendata[pandas]   # pandas
+pip install tryopendata[polars]   # polars
+pip install tryopendata[all]      # both
 ```
 
 ## Quick Start
