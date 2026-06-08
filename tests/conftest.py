@@ -42,7 +42,7 @@ def make_dataset_meta(**overrides: Any) -> dict[str, Any]:
         {
             "source_url": "https://example.com/data.csv",
             "schema_info": {"columns": []},
-            "available_views": ["default", "timeseries"],
+            "available_views": [{"name": "default"}, {"name": "timeseries"}],
             "default_view": "default",
         }
     )

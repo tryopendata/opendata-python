@@ -36,7 +36,7 @@ class DatasetMeta(Dataset):
 
     source_url: str | None = None
     schema_info: dict[str, Any] | None = None
-    available_views: list[str] | None = None
+    available_views: list[ViewInfo] | None = None
     default_view: str | None = None
     semantic_entity: str | None = None
     semantic_time: str | None = None
@@ -51,6 +51,12 @@ class DatasetMeta(Dataset):
     source_count: int | None = None
     connector: str | None = None
     enrichment_status: str | None = None
+
+    @property
+    def columns(self) -> list[ColumnStats]:
+        if not self.schema_info:
+            return []
+        return [ColumnStats.model_validate(c) for c in self.schema_info.get("columns", [])]
 
     def _repr_html_(self) -> str | None:
         try:

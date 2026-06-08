@@ -76,13 +76,15 @@ def test_dataset_meta_parses():
             "status": "ready",
             "source_url": "https://example.com/data.csv",
             "schema_info": {"columns": []},
-            "available_views": ["default"],
+            "available_views": [{"name": "default"}],
             "created_at": NOW,
             "updated_at": NOW,
         }
     )
     assert m.source_url == "https://example.com/data.csv"
-    assert m.available_views == ["default"]
+    assert m.available_views is not None
+    assert len(m.available_views) == 1
+    assert m.available_views[0].name == "default"
 
 
 def test_dataset_meta_optional_defaults():
