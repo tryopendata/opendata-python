@@ -31,6 +31,32 @@ class Dataset(BaseModel):
         return f"Dataset({self.path!r}, rows={rows}, status={self.status!r})"
 
 
+class ColumnStats(BaseModel):
+    """Column-level statistics."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    type: str
+    raw_type: str | None = None
+    distinct_count: int | None = None
+    null_count: int | None = None
+    min: Any | None = None
+    max: Any | None = None
+    sample_values: list[Any] | None = None
+
+
+class ViewInfo(BaseModel):
+    """Available view on a dataset."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    description: str | None = None
+    capabilities: list[str] = Field(default_factory=list)
+    example_url: str | None = None
+
+
 class DatasetMeta(Dataset):
     """Full dataset metadata from /meta endpoint."""
 
@@ -195,29 +221,3 @@ class Category(BaseModel):
     description: str | None = None
     dataset_count: int | None = None
     icon: str | None = None
-
-
-class ColumnStats(BaseModel):
-    """Column-level statistics."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    name: str
-    type: str
-    raw_type: str | None = None
-    distinct_count: int | None = None
-    null_count: int | None = None
-    min: Any | None = None
-    max: Any | None = None
-    sample_values: list[Any] | None = None
-
-
-class ViewInfo(BaseModel):
-    """Available view on a dataset."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    name: str
-    description: str | None = None
-    capabilities: list[str] = Field(default_factory=list)
-    example_url: str | None = None
