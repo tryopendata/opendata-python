@@ -90,14 +90,20 @@ class RateLimitError(OpenDataError):
     ) -> None:
         super().__init__(message, **kwargs)  # type: ignore[arg-type]
         self.retry_after = retry_after
+        self.upgrade_message: str | None = None
+        if self.body and isinstance(self.body, dict):
+            self.upgrade_message = self.body.get("upgrade_message")
 
     def __str__(self) -> str:
         parts = [self.message]
         if self.retry_after is not None:
-            parts.append(
-                f"Retry after {self.retry_after:.0f}s. "
-                "Increase retries with: OpenData(max_retries=5)"
-            )
+            parts.append(f"Retry after {self.retry_after:.0f}s.")
+        if self.upgrade_message:
+            parts.append(self.upgrade_message)
+        parts.append(
+            "Add an API key for higher limits: OpenData(api_key='od_live_...')\n"
+            "Get a free key at: https://tryopendata.ai/settings/api-keys"
+        )
         return "\n".join(parts)
 
 
