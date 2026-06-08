@@ -84,9 +84,7 @@ def _raise_for_status(response: httpx.Response) -> None:
     if status == 404:
         raise NotFoundError(message, **common)
     if status == 429:
-        retry_after_raw = response.headers.get("retry-after")
-        retry_after = float(retry_after_raw) if retry_after_raw else None
-        raise RateLimitError(message, retry_after=retry_after, **common)
+        raise RateLimitError(message, retry_after=_parse_retry_after(response), **common)
     if status in (400, 422):
         raise InvalidRequestError(message, **common)
     if status >= 500:
@@ -96,6 +94,11 @@ def _raise_for_status(response: httpx.Response) -> None:
     raise APIError(message, **common)
 
 
+def _parse_retry_after(response: httpx.Response) -> float | None:
+    raw = response.headers.get("retry-after")
+    return float(raw) if raw else None
+
+
 def _backoff_delay(attempt: int, retry_after: float | None = None) -> float:
     """Exponential backoff with jitter. Respects Retry-After if provided."""
     if retry_after is not None and retry_after > 0:
@@ -103,6 +106,14 @@ def _backoff_delay(attempt: int, retry_after: float | None = None) -> float:
     base = min(2.0**attempt, 30.0)
     jitter = random.uniform(0, base * 0.5)  # noqa: S311
     return base + jitter
+
+
+def _connection_error(exc: Exception, timeout: float) -> APIConnectionError:
+    if isinstance(exc, httpx.TimeoutException):
+        msg = f"Request timed out after {timeout}s"
+    else:
+        msg = f"Connection error: {exc}"
+    return APIConnectionError(msg, status_code=None, request_id=None)
 
 
 class SyncTransport:
@@ -145,45 +156,23 @@ class SyncTransport:
                     params=params,
                     json=json_body,
                 )
-            except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+            except (httpx.ConnectError, httpx.ConnectTimeout, httpx.TimeoutException) as exc:
                 last_exc = exc
                 if not can_retry or attempt >= max_attempts - 1:
-                    raise APIConnectionError(
-                        f"Connection error: {exc}",
-                        status_code=None,
-                        request_id=None,
-                    ) from exc
-                time.sleep(_backoff_delay(attempt))
-                continue
-            except httpx.TimeoutException as exc:
-                last_exc = exc
-                if not can_retry or attempt >= max_attempts - 1:
-                    raise APIConnectionError(
-                        f"Request timed out after {self._config.timeout}s",
-                        status_code=None,
-                        request_id=None,
-                    ) from exc
+                    raise _connection_error(exc, self._config.timeout) from exc
                 time.sleep(_backoff_delay(attempt))
                 continue
 
-            # Check for retryable status codes
-            is_retryable = response.status_code in _RETRYABLE_STATUSES
-            if can_retry and is_retryable and attempt < max_attempts - 1:
-                retry_after_raw = response.headers.get("retry-after")
-                retry_after = float(retry_after_raw) if retry_after_raw else None
-                time.sleep(_backoff_delay(attempt, retry_after))
+            is_retryable = can_retry and response.status_code in _RETRYABLE_STATUSES
+            if is_retryable and attempt < max_attempts - 1:
+                time.sleep(_backoff_delay(attempt, _parse_retry_after(response)))
                 continue
 
             _raise_for_status(response)
             return response
 
-        # Should not get here, but just in case
         if last_exc:
-            raise APIConnectionError(
-                f"Request failed after {max_attempts} attempts: {last_exc}",
-                status_code=None,
-                request_id=None,
-            ) from last_exc
+            raise _connection_error(last_exc, self._config.timeout) from last_exc
         raise APIConnectionError(
             f"Request failed after {max_attempts} attempts",
             status_code=None,
@@ -242,44 +231,23 @@ class AsyncTransport:
                     params=params,
                     json=json_body,
                 )
-            except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+            except (httpx.ConnectError, httpx.ConnectTimeout, httpx.TimeoutException) as exc:
                 last_exc = exc
                 if not can_retry or attempt >= max_attempts - 1:
-                    raise APIConnectionError(
-                        f"Connection error: {exc}",
-                        status_code=None,
-                        request_id=None,
-                    ) from exc
-                await asyncio.sleep(_backoff_delay(attempt))
-                continue
-            except httpx.TimeoutException as exc:
-                last_exc = exc
-                if not can_retry or attempt >= max_attempts - 1:
-                    raise APIConnectionError(
-                        f"Request timed out after {self._config.timeout}s",
-                        status_code=None,
-                        request_id=None,
-                    ) from exc
+                    raise _connection_error(exc, self._config.timeout) from exc
                 await asyncio.sleep(_backoff_delay(attempt))
                 continue
 
-            # Check for retryable status codes
-            is_retryable = response.status_code in _RETRYABLE_STATUSES
-            if can_retry and is_retryable and attempt < max_attempts - 1:
-                retry_after_raw = response.headers.get("retry-after")
-                retry_after = float(retry_after_raw) if retry_after_raw else None
-                await asyncio.sleep(_backoff_delay(attempt, retry_after))
+            is_retryable = can_retry and response.status_code in _RETRYABLE_STATUSES
+            if is_retryable and attempt < max_attempts - 1:
+                await asyncio.sleep(_backoff_delay(attempt, _parse_retry_after(response)))
                 continue
 
             _raise_for_status(response)
             return response
 
         if last_exc:
-            raise APIConnectionError(
-                f"Request failed after {max_attempts} attempts: {last_exc}",
-                status_code=None,
-                request_id=None,
-            ) from last_exc
+            raise _connection_error(last_exc, self._config.timeout) from last_exc
         raise APIConnectionError(
             f"Request failed after {max_attempts} attempts",
             status_code=None,
