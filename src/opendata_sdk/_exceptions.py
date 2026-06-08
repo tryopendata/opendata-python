@@ -102,7 +102,7 @@ class RateLimitError(OpenDataError):
             parts.append(self.upgrade_message)
         parts.append(
             "Add an API key for higher limits: OpenData(api_key='od_live_...')\n"
-            "Get a free key at: https://tryopendata.ai/settings/api-keys"
+            "Create a free account (no credit card required): https://tryopendata.ai/settings/api-keys"
         )
         return "\n".join(parts)
 
