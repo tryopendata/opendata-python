@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute next version
+        id: version
+        run: |
+          latest_tag=$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || echo "v0.0.0")
+
+          # Skip if HEAD is already tagged
+          if git describe --tags --match 'v*' --exact-match HEAD 2>/dev/null; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "HEAD is already tagged, skipping"
+            exit 0
+          fi
+
+          IFS='.' read -r major minor patch <<< "${latest_tag#v}"
+          commits=$(git log "${latest_tag}..HEAD" --format="%s" 2>/dev/null || git log --format="%s")
+
+          if echo "$commits" | grep -qE "^[a-z]+(\(.+\))?!:|BREAKING CHANGE:"; then
+            ver="$((major + 1)).0.0"
+          elif echo "$commits" | grep -qE "^feat(\(.+\))?:"; then
+            ver="${major}.$((minor + 1)).0"
+          else
+            ver="${major}.${minor}.$((patch + 1))"
+          fi
+
+          echo "version=${ver}" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "Next version: ${ver}"
+
+      - name: Bump version in source files
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          VER="${{ steps.version.outputs.version }}"
+          sed -i "s/^__version__ = \".*\"/__version__ = \"${VER}\"/" src/opendata_sdk/_version.py
+          sed -i "s/^version = \".*\"/version = \"${VER}\"/" pyproject.toml
+
+      - name: Commit, tag, and push
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          VER="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/opendata_sdk/_version.py pyproject.toml
+          git commit -m "chore(release): v${VER}"
+          git tag "v${VER}"
+          git push origin HEAD:main --tags
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER="${{ steps.version.outputs.version }}"
+          latest_tag=$(git describe --tags --match 'v*' --abbrev=0 "v${VER}^" 2>/dev/null || echo "")
+
+          if [ -n "$latest_tag" ]; then
+            NOTES=$(git log "${latest_tag}..v${VER}" --format="- %s" --no-merges | grep -v "chore(release)")
+          else
+            NOTES=$(git log "v${VER}" --format="- %s" --no-merges | grep -v "chore(release)")
+          fi
+
+          gh release create "v${VER}" \
+            --title "v${VER}" \
+            --notes "${NOTES:-No notable changes}" \
+            --repo "${{ github.repository }}"
