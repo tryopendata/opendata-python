@@ -121,3 +121,25 @@ def make_suggest_response() -> dict[str, Any]:
         "suggestions": [{"text": "inflation", "score": 0.9}],
         "query": "inf",
     }
+
+
+def make_sql_page(
+    *,
+    columns: list[str] | None = None,
+    types: list[str] | None = None,
+    rows: list[list[Any]] | None = None,
+    row_count: int = 2,
+    execution_time_ms: float = 125.0,
+    truncated: bool = False,
+    warnings: list[str] | None = None,
+) -> dict[str, Any]:
+    """SQL query response in columnar format."""
+    return {
+        "columns": columns or ["year", "value"],
+        "types": types or ["INTEGER", "DOUBLE"],
+        "rows": rows if rows is not None else [[2020, 1.5], [2021, 2.3]],
+        "row_count": row_count,
+        "execution_time_ms": execution_time_ms,
+        "truncated": truncated,
+        "warnings": warnings,
+    }

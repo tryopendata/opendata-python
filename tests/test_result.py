@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendata_sdk._result import DataResult
+from opendata_sdk._result import DataResult, SqlResult
 from opendata_sdk._types import DataPage
 
 
@@ -223,3 +223,55 @@ def test_column_types_shorter_than_columns():
     df = result.to_pandas()
     assert df["a"].dtype.name == "Int64"
     assert len(df) == 2
+
+
+# -- SqlResult -------------------------------------------------------------
+
+
+def _sql_result(**kwargs) -> SqlResult:
+    defaults = {
+        "page": _page(),
+        "execution_time_ms": 125.0,
+        "truncated": False,
+        "row_count": 3,
+        "sql_warnings": [],
+    }
+    defaults.update(kwargs)
+    page = defaults.pop("page")
+    return SqlResult(page, **defaults)
+
+
+def test_sql_result_inherits_data_result():
+    result = _sql_result()
+    assert isinstance(result, DataResult)
+    assert result.columns == ["year", "value", "name"]
+    assert len(result.rows) == 3
+    assert result.rows[0] == {"year": 2020, "value": 1.5, "name": "alpha"}
+
+
+def test_sql_result_metadata():
+    result = _sql_result(execution_time_ms=250.5, truncated=True, row_count=10000)
+    assert result.execution_time_ms == 250.5
+    assert result.truncated is True
+    assert result.row_count == 10000
+
+
+def test_sql_result_sql_warnings():
+    """SqlResult.sql_warnings returns list[str]."""
+    result = _sql_result(sql_warnings=["Slow query", "Results truncated"])
+    assert result.sql_warnings == ["Slow query", "Results truncated"]
+    assert all(isinstance(w, str) for w in result.sql_warnings)
+
+
+def test_sql_result_sql_warnings_empty():
+    result = _sql_result(sql_warnings=[])
+    assert result.sql_warnings == []
+
+
+def test_sql_result_repr():
+    result = _sql_result(execution_time_ms=125.0)
+    r = repr(result)
+    assert "SqlResult" in r
+    assert "rows=3" in r
+    assert "columns=3" in r
+    assert "time=125ms" in r

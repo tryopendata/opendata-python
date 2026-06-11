@@ -9,6 +9,7 @@ from opendata_sdk._types import (
     Provider,
     SearchResponse,
     SearchResult,
+    SqlPage,
     SuggestResponse,
     ViewInfo,
 )
@@ -278,3 +279,67 @@ def test_view_info_defaults():
     assert v.description is None
     assert v.capabilities == []
     assert v.example_url is None
+
+
+# -- SqlPage ---------------------------------------------------------------
+
+
+def test_sql_page_parses():
+    page = SqlPage.model_validate(
+        {
+            "columns": ["year", "value"],
+            "types": ["INTEGER", "DOUBLE"],
+            "rows": [[2020, 1.5], [2021, 2.3]],
+            "row_count": 2,
+            "execution_time_ms": 125.0,
+            "truncated": False,
+        }
+    )
+    assert page.columns == ["year", "value"]
+    assert page.types == ["INTEGER", "DOUBLE"]
+    assert len(page.rows) == 2
+    assert page.row_count == 2
+    assert page.execution_time_ms == 125.0
+    assert page.truncated is False
+
+
+def test_sql_page_extra_ignored():
+    page = SqlPage.model_validate(
+        {
+            "columns": ["a"],
+            "types": ["INTEGER"],
+            "rows": [[1]],
+            "row_count": 1,
+            "some_future_field": "whatever",
+        }
+    )
+    assert page.columns == ["a"]
+    assert not hasattr(page, "some_future_field")
+
+
+def test_sql_page_to_data_page():
+    page = SqlPage.model_validate(
+        {
+            "columns": ["year", "value"],
+            "types": ["INTEGER", "DOUBLE"],
+            "rows": [[2020, 1.5], [2021, 2.3]],
+            "row_count": 2,
+        }
+    )
+    dp = page.to_data_page()
+    assert isinstance(dp, DataPage)
+    assert dp.columns == ["year", "value"]
+    assert dp.column_types == ["INTEGER", "DOUBLE"]
+    assert dp.data == [[2020, 1.5], [2021, 2.3]]
+    assert dp.total_rows == 2
+
+
+def test_sql_page_defaults():
+    page = SqlPage.model_validate({})
+    assert page.columns == []
+    assert page.types == []
+    assert page.rows == []
+    assert page.row_count == 0
+    assert page.execution_time_ms == 0.0
+    assert page.truncated is False
+    assert page.warnings is None

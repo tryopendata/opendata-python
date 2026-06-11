@@ -150,6 +150,29 @@ class DataPage(BaseModel):
     warnings: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class SqlPage(BaseModel):
+    """SQL query response in columnar format."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    columns: list[str] = Field(default_factory=list)
+    types: list[str] = Field(default_factory=list)
+    rows: list[list[Any]] = Field(default_factory=list)
+    row_count: int = 0
+    execution_time_ms: float = 0.0
+    truncated: bool = False
+    warnings: list[str] | None = None
+
+    def to_data_page(self) -> DataPage:
+        """Convert to a DataPage for use with DataResult."""
+        return DataPage(
+            columns=self.columns,
+            column_types=self.types,
+            data=self.rows,
+            total_rows=self.row_count,
+        )
+
+
 class SearchResult(BaseModel):
     """A single search result."""
 

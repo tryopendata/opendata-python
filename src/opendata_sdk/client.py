@@ -8,6 +8,7 @@ from opendata_sdk._resources.categories import CategoryResource
 from opendata_sdk._resources.datasets import DatasetResource
 from opendata_sdk._resources.providers import ProviderResource
 from opendata_sdk._resources.search import SearchResource
+from opendata_sdk._resources.sql import SqlResource
 from opendata_sdk._result import DataResult
 from opendata_sdk._transport import SyncTransport
 from opendata_sdk._types import DatasetMeta, SearchResponse, SuggestResponse
@@ -51,6 +52,7 @@ class OpenData:
         self._providers = ProviderResource(self._transport)
         self._categories = CategoryResource(self._transport)
         self._search = SearchResource(self._transport)
+        self._sql = SqlResource(self._transport)
 
     @property
     def datasets(self) -> DatasetResource:
@@ -66,6 +68,11 @@ class OpenData:
     def categories(self) -> CategoryResource:
         """Category operations: list, get."""
         return self._categories
+
+    @property
+    def sql(self) -> SqlResource:
+        """SQL query operations."""
+        return self._sql
 
     def meta(self, path: str) -> DatasetMeta:
         """Get full metadata for a dataset. Shortcut for client.datasets.get()."""

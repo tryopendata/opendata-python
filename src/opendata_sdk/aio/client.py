@@ -8,6 +8,7 @@ from opendata_sdk._resources.categories import AsyncCategoryResource
 from opendata_sdk._resources.datasets import AsyncDatasetResource
 from opendata_sdk._resources.providers import AsyncProviderResource
 from opendata_sdk._resources.search import AsyncSearchResource
+from opendata_sdk._resources.sql import AsyncSqlResource
 from opendata_sdk._result import DataResult
 from opendata_sdk._transport import AsyncTransport
 from opendata_sdk._types import DatasetMeta, SearchResponse, SuggestResponse
@@ -44,6 +45,7 @@ class OpenData:
         self._providers = AsyncProviderResource(self._transport)
         self._categories = AsyncCategoryResource(self._transport)
         self._search = AsyncSearchResource(self._transport)
+        self._sql = AsyncSqlResource(self._transport)
 
     @property
     def datasets(self) -> AsyncDatasetResource:
@@ -59,6 +61,11 @@ class OpenData:
     def categories(self) -> AsyncCategoryResource:
         """Category operations: list, get."""
         return self._categories
+
+    @property
+    def sql(self) -> AsyncSqlResource:
+        """SQL query operations."""
+        return self._sql
 
     async def meta(self, path: str) -> DatasetMeta:
         """Get full metadata for a dataset. Shortcut for client.datasets.get()."""

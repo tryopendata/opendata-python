@@ -242,3 +242,52 @@ class DataResult:
 
     def __repr__(self) -> str:
         return f"DataResult(rows={len(self)}, columns={len(self.columns)})"
+
+
+class SqlResult(DataResult):
+    """Wraps a SQL query response with additional metadata.
+
+    Inherits all DataResult functionality (rows, to_pandas, to_polars)
+    and adds SQL-specific properties like execution_time_ms and truncated.
+    """
+
+    def __init__(
+        self,
+        page: DataPage,
+        *,
+        execution_time_ms: float,
+        truncated: bool,
+        row_count: int,
+        sql_warnings: list[str],
+    ) -> None:
+        super().__init__(page)
+        self._execution_time_ms = execution_time_ms
+        self._truncated = truncated
+        self._row_count = row_count
+        self._sql_warnings = sql_warnings
+
+    @property
+    def execution_time_ms(self) -> float:
+        """Query execution time in milliseconds."""
+        return self._execution_time_ms
+
+    @property
+    def truncated(self) -> bool:
+        """Whether results were truncated due to row_limit."""
+        return self._truncated
+
+    @property
+    def row_count(self) -> int:
+        """Number of rows returned by the query."""
+        return self._row_count
+
+    @property
+    def sql_warnings(self) -> list[str]:
+        """SQL-specific warnings from query execution."""
+        return self._sql_warnings
+
+    def __repr__(self) -> str:
+        return (
+            f"SqlResult(rows={len(self)}, columns={len(self.columns)}, "
+            f"time={self._execution_time_ms:.0f}ms)"
+        )

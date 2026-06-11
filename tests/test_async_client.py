@@ -7,6 +7,8 @@ import httpx
 import respx
 
 from opendata_sdk._resources.datasets import AsyncDatasetResource
+from opendata_sdk._resources.sql import AsyncSqlResource
+from opendata_sdk._result import SqlResult
 from opendata_sdk._types import SearchResponse, SuggestResponse
 from opendata_sdk.aio import OpenData
 
@@ -15,6 +17,7 @@ from .conftest import (
     make_dataset_list,
     make_dataset_meta,
     make_search_response,
+    make_sql_page,
     make_suggest_response,
 )
 
@@ -140,3 +143,20 @@ async def test_repr():
     assert "async=True" in r
     assert "api.tryopendata.ai" in r
     await client.close()
+
+
+async def test_sql_property():
+    client = OpenData()
+    assert isinstance(client.sql, AsyncSqlResource)
+    await client.close()
+
+
+@respx.mock
+async def test_sql_execute_delegates():
+    route = respx.post(f"{BASE}/datasets/fred/gdp/query").mock(
+        return_value=httpx.Response(200, json=make_sql_page())
+    )
+    async with OpenData() as client:
+        result = await client.sql.execute("SELECT * FROM fred/gdp")
+        assert isinstance(result, SqlResult)
+        assert route.called
