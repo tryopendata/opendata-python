@@ -24,7 +24,6 @@ from opendata_sdk._types import (
     Provider,
     SearchResponse,
     SearchResult,
-    SqlPage,
     SuggestionItem,
     SuggestResponse,
 )
