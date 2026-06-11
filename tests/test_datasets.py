@@ -95,12 +95,12 @@ def test_query_with_query_builder():
 @respx.mock
 def test_query_all_merges_pages():
     page1 = make_data_page(
-        data=[[2020, 1.5], [2021, 2.3]],
+        rows=[[2020, 1.5], [2021, 2.3]],
         next_cursor="cur1",
         total_rows=4,
     )
     page2 = make_data_page(
-        data=[[2022, 3.1], [2023, 4.0]],
+        rows=[[2022, 3.1], [2023, 4.0]],
         next_cursor=None,
         total_rows=4,
     )
@@ -120,8 +120,8 @@ def test_query_all_merges_pages():
 
 @respx.mock
 def test_query_iter_yields_pages():
-    page1 = make_data_page(data=[[2020, 1.5]], next_cursor="cur1")
-    page2 = make_data_page(data=[[2021, 2.3]], next_cursor=None)
+    page1 = make_data_page(rows=[[2020, 1.5]], next_cursor="cur1")
+    page2 = make_data_page(rows=[[2021, 2.3]], next_cursor=None)
     respx.get(f"{BASE}/datasets/bls/cpi-u").mock(
         side_effect=[
             httpx.Response(200, json=page1),
@@ -272,7 +272,7 @@ def test_related_returns_datasets():
 @respx.mock
 def test_query_all_with_max_rows():
     page = make_data_page(
-        data=[[2020, 1.5], [2021, 2.3], [2022, 3.1]],
+        rows=[[2020, 1.5], [2021, 2.3], [2022, 3.1]],
         next_cursor=None,
         total_rows=3,
     )

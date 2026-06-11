@@ -68,16 +68,16 @@ def make_dataset_list(
 def make_data_page(
     *,
     columns: list[str] | None = None,
-    column_types: list[str] | None = None,
-    data: list[list[Any]] | None = None,
+    types: list[str] | None = None,
+    rows: list[list[Any]] | None = None,
     total_rows: int = 100,
     next_cursor: str | None = None,
 ) -> dict[str, Any]:
-    """Columnar data response."""
+    """Columnar data response matching API's ColumnarDataResponse shape."""
     return {
         "columns": columns or ["year", "value"],
-        "column_types": column_types or ["INTEGER", "DOUBLE"],
-        "data": data if data is not None else [[2020, 1.5], [2021, 2.3]],
+        "types": types or ["INTEGER", "DOUBLE"],
+        "rows": rows if rows is not None else [[2020, 1.5], [2021, 2.3]],
         "total_rows": total_rows,
         "filtered_rows": total_rows,
         "limit": 1000,
@@ -118,7 +118,16 @@ def make_search_response(
 
 def make_suggest_response() -> dict[str, Any]:
     return {
-        "suggestions": [{"text": "inflation", "score": 0.9}],
+        "suggestions": [
+            {
+                "id": "abc-123",
+                "name": "Inflation Rate",
+                "slug": "inflation-rate",
+                "provider": "fred",
+                "path": "fred/inflation-rate",
+                "description": "Monthly inflation rate",
+            }
+        ],
         "query": "inf",
     }
 

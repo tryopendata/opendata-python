@@ -10,6 +10,7 @@ from opendata_sdk._types import (
     SearchResponse,
     SearchResult,
     SqlPage,
+    SuggestionItem,
     SuggestResponse,
     ViewInfo,
 )
@@ -105,6 +106,31 @@ def test_dataset_meta_optional_defaults():
     assert m.default_view is None
     assert m.semantic_entity is None
     assert m.parquet_size_bytes is None
+    assert m.description_layman is None
+    assert m.temporal_coverage_start is None
+    assert m.temporal_coverage_end is None
+    assert m.graph is None
+
+
+def test_dataset_meta_enrichment_fields():
+    m = DatasetMeta.model_validate(
+        {
+            "id": "abc",
+            "name": "Test",
+            "path": "test/test",
+            "status": "ready",
+            "created_at": NOW,
+            "updated_at": NOW,
+            "description_layman": "A simple description",
+            "temporal_coverage_start": "2020-01-01T00:00:00Z",
+            "temporal_coverage_end": "2025-12-31T00:00:00Z",
+            "graph": {"importance": 0.8, "bridge_score": 0.3},
+        }
+    )
+    assert m.description_layman == "A simple description"
+    assert m.temporal_coverage_start is not None
+    assert m.temporal_coverage_end is not None
+    assert m.graph == {"importance": 0.8, "bridge_score": 0.3}
 
 
 def test_data_page_parses():
@@ -187,6 +213,42 @@ def test_search_result_defaults():
     assert sr.highlights is None
     assert sr.categories == []
     assert sr.star_count is None
+    assert sr.is_starred is None
+    assert sr.match_type is None
+    assert sr.semantic_score is None
+    assert sr.quality_score is None
+    assert sr.importance is None
+
+
+def test_search_result_enrichment_fields():
+    sr = SearchResult.model_validate(
+        {
+            "id": "abc",
+            "name": "CPI",
+            "slug": "cpi-u",
+            "path": "bls/cpi-u",
+            "match_type": "both",
+            "semantic_score": 0.85,
+            "quality_score": 0.9,
+            "importance": 0.7,
+            "bridge_score": 0.3,
+            "community_id": 5,
+            "community_label": "Economic Indicators",
+            "is_starred": True,
+            "query_count": 42,
+            "download_count": 100,
+        }
+    )
+    assert sr.match_type == "both"
+    assert sr.semantic_score == 0.85
+    assert sr.quality_score == 0.9
+    assert sr.importance == 0.7
+    assert sr.bridge_score == 0.3
+    assert sr.community_id == 5
+    assert sr.community_label == "Economic Indicators"
+    assert sr.is_starred is True
+    assert sr.query_count == 42
+    assert sr.download_count == 100
 
 
 def test_search_response_parses():
@@ -214,18 +276,58 @@ def test_search_response_defaults():
     assert resp.limit == 20
     assert resp.offset == 0
     assert resp.facets is None
+    assert resp.suggestions is None
     assert resp.processing_time_ms is None
 
 
 def test_suggest_response():
     resp = SuggestResponse.model_validate(
         {
-            "suggestions": [{"text": "inflation", "score": 0.9}],
+            "suggestions": [
+                {
+                    "id": "abc",
+                    "name": "Inflation Rate",
+                    "slug": "inflation",
+                    "provider": "fred",
+                    "path": "fred/inflation",
+                }
+            ],
             "query": "inf",
         }
     )
     assert len(resp.suggestions) == 1
+    assert resp.suggestions[0].name == "Inflation Rate"
+    assert resp.suggestions[0].provider == "fred"
     assert resp.query == "inf"
+    assert resp.did_you_mean is None
+
+
+def test_suggest_response_did_you_mean():
+    resp = SuggestResponse.model_validate(
+        {
+            "suggestions": [],
+            "query": "inflaton",
+            "did_you_mean": "inflation",
+        }
+    )
+    assert resp.did_you_mean == "inflation"
+    assert resp.suggestions == []
+
+
+def test_suggestion_item():
+    item = SuggestionItem.model_validate(
+        {
+            "id": "abc",
+            "name": "CPI",
+            "slug": "cpi-u",
+            "provider": "bls",
+            "path": "bls/cpi-u",
+            "description": "Consumer Price Index",
+        }
+    )
+    assert item.name == "CPI"
+    assert item.provider == "bls"
+    assert item.description == "Consumer Price Index"
 
 
 def test_provider_parses():
@@ -239,6 +341,7 @@ def test_provider_parses():
     assert p.slug == "bls"
     assert p.description is None
     assert p.dataset_count is None
+    assert p.base_url is None
 
 
 def test_category_parses():
@@ -265,11 +368,13 @@ def test_column_stats_parses():
             "min": 1970,
             "max": 2024,
             "sample_values": [2020, 2021, 2022],
+            "supported_aggregations": ["sum", "avg", "min", "max"],
         }
     )
     assert cs.name == "year"
     assert cs.min == 1970
     assert cs.sample_values == [2020, 2021, 2022]
+    assert cs.supported_aggregations == ["sum", "avg", "min", "max"]
 
 
 def test_column_stats_defaults():
@@ -277,6 +382,7 @@ def test_column_stats_defaults():
     assert cs.raw_type is None
     assert cs.distinct_count is None
     assert cs.sample_values is None
+    assert cs.supported_aggregations is None
 
 
 def test_view_info_parses():

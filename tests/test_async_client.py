@@ -108,8 +108,8 @@ async def test_datasets_query():
 
 @respx.mock
 async def test_datasets_query_all():
-    page1 = make_data_page(data=[[2020, 1.5]], next_cursor="c1", total_rows=2)
-    page2 = make_data_page(data=[[2021, 2.3]], next_cursor=None, total_rows=2)
+    page1 = make_data_page(rows=[[2020, 1.5]], next_cursor="c1", total_rows=2)
+    page2 = make_data_page(rows=[[2021, 2.3]], next_cursor=None, total_rows=2)
     respx.get(f"{BASE}/datasets/bls/cpi-u").mock(
         side_effect=[
             httpx.Response(200, json=page1),

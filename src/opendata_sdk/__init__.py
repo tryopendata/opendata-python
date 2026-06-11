@@ -23,6 +23,7 @@ from opendata_sdk._types import (
     SearchResponse,
     SearchResult,
     SqlPage,
+    SuggestionItem,
     SuggestResponse,
     ViewInfo,
 )
@@ -49,6 +50,7 @@ __all__ = [
     "Provider",
     "SearchResponse",
     "SearchResult",
+    "SuggestionItem",
     "SuggestResponse",
     "DataPage",
     "SqlPage",

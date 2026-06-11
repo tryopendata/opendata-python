@@ -39,11 +39,24 @@ class ColumnStats(BaseModel):
     name: str
     type: str
     raw_type: str | None = None
+    display_name: str | None = None
+    description: str | None = None
+    original_name: str | None = None
+    aliases: list[str] | None = None
+    nullable: bool | None = None
+    fill_pct: float | None = None
     distinct_count: int | None = None
     null_count: int | None = None
     min: Any | None = None
     max: Any | None = None
+    min_value: Any | None = None
+    max_value: Any | None = None
     sample_values: list[Any] | None = None
+    supported_aggregations: list[str] | None = None
+    semantic_type: str | None = None
+    semantic_subtype: str | None = None
+    postgres_type: str | None = None
+    source: str | None = None
 
 
 class ViewInfo(BaseModel):
@@ -77,6 +90,10 @@ class DatasetMeta(Dataset):
     source_count: int | None = None
     connector: str | None = None
     enrichment_status: str | None = None
+    description_layman: str | None = None
+    temporal_coverage_start: datetime | None = None
+    temporal_coverage_end: datetime | None = None
+    graph: dict[str, Any] | None = None
 
     @property
     def columns(self) -> list[ColumnStats]:
@@ -192,8 +209,33 @@ class SearchResult(BaseModel):
     highlights: dict[str, str] | None = None
     categories: list[str] = Field(default_factory=list)
     star_count: int | None = None
+    is_starred: bool | None = None
+    match_type: str | None = None
+    semantic_score: float | None = None
+    quality_score: float | None = None
+    temporal_granularity: str | None = None
+    geographic_scope: str | None = None
+    query_count: int | None = None
+    download_count: int | None = None
+    importance: float | None = None
+    bridge_score: float | None = None
+    community_id: int | None = None
+    community_label: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+
+class SuggestionItem(BaseModel):
+    """Individual autocomplete suggestion."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str
+    name: str
+    slug: str
+    provider: str
+    path: str
+    description: str | None = None
 
 
 class SearchResponse(BaseModel):
@@ -207,6 +249,7 @@ class SearchResponse(BaseModel):
     offset: int = 0
     facets: dict[str, Any] | None = None
     query: str | None = None
+    suggestions: list[str] | None = None
     processing_time_ms: float | None = None
 
 
@@ -215,8 +258,9 @@ class SuggestResponse(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    suggestions: list[dict[str, Any]] = Field(default_factory=list)
+    suggestions: list[SuggestionItem] = Field(default_factory=list)
     query: str | None = None
+    did_you_mean: str | None = None
 
 
 class Provider(BaseModel):
@@ -228,6 +272,7 @@ class Provider(BaseModel):
     slug: str
     name: str
     description: str | None = None
+    base_url: str | None = None
     dataset_count: int | None = None
     total_rows: int | None = None
     created_at: datetime | None = None
