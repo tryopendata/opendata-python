@@ -131,6 +131,23 @@ def test_data_page_defaults():
     assert page.warnings == []
 
 
+def test_data_page_parses_api_format():
+    """API returns 'types' and 'rows' (not 'column_types' and 'data')."""
+    page = DataPage.model_validate(
+        {
+            "columns": ["year", "value"],
+            "types": ["INTEGER", "DOUBLE"],
+            "rows": [[2020, 1.5], [2021, 2.3]],
+            "total_rows": 100,
+        }
+    )
+    assert page.columns == ["year", "value"]
+    assert page.column_types == ["INTEGER", "DOUBLE"]
+    assert len(page.data) == 2
+    assert page.data == [[2020, 1.5], [2021, 2.3]]
+    assert page.total_rows == 100
+
+
 def test_data_page_extra_ignored():
     page = DataPage.model_validate(
         {

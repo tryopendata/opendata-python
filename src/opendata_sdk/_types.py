@@ -136,11 +136,11 @@ class DatasetMeta(Dataset):
 class DataPage(BaseModel):
     """Columnar data response from data endpoint."""
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     columns: list[str] = Field(default_factory=list)
-    column_types: list[str] = Field(default_factory=list)
-    data: list[list[Any]] = Field(default_factory=list)
+    column_types: list[str] = Field(default_factory=list, alias="types")
+    data: list[list[Any]] = Field(default_factory=list, alias="rows")
     total_rows: int | None = None
     filtered_rows: int | None = None
     limit: int | None = None
