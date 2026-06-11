@@ -12,7 +12,7 @@ from opendata_sdk._exceptions import (
 )
 from opendata_sdk._pagination import AsyncPaginatedList, PaginatedList
 from opendata_sdk._query import Query
-from opendata_sdk._result import DataResult
+from opendata_sdk._result import DataResult, SqlResult
 from opendata_sdk._types import (
     Category,
     ColumnStats,
@@ -22,6 +22,7 @@ from opendata_sdk._types import (
     Provider,
     SearchResponse,
     SearchResult,
+    SqlPage,
     SuggestResponse,
     ViewInfo,
 )
@@ -36,6 +37,7 @@ __all__ = [
     # Query + Result
     "Query",
     "DataResult",
+    "SqlResult",
     # Pagination
     "AsyncPaginatedList",
     "PaginatedList",
@@ -49,6 +51,7 @@ __all__ = [
     "SearchResult",
     "SuggestResponse",
     "DataPage",
+    "SqlPage",
     "ViewInfo",
     # Exceptions
     "APIConnectionError",

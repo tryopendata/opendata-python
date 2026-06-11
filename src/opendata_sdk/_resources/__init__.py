@@ -13,14 +13,17 @@ from opendata_sdk._resources.providers import (
     ProviderResource,
 )
 from opendata_sdk._resources.search import AsyncSearchResource, SearchResource
+from opendata_sdk._resources.sql import AsyncSqlResource, SqlResource
 
 __all__ = [
     "AsyncCategoryResource",
     "AsyncDatasetResource",
     "AsyncProviderResource",
     "AsyncSearchResource",
+    "AsyncSqlResource",
     "CategoryResource",
     "DatasetResource",
     "ProviderResource",
     "SearchResource",
+    "SqlResource",
 ]
